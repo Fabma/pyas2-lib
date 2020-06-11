@@ -978,5 +978,22 @@ class Mdn(object):
             if part.get_content_type() == "message/disposition-notification":
                 mdn = part.get_payload()[0]
                 message_id = mdn.get("Original-Message-ID").strip("<>")
-                message_recipient = mdn.get("Original-Recipient").split(";")[1].strip()
+                message_recipient = self._get_message_recipient(mdn)
         return message_id, message_recipient
+
+    @staticmethod
+    def _get_message_recipient(mdn):
+        if len(mdn.get("Original-Recipient").split(";")) == 1:
+            # Special case for client responses like "Original-Recipient: TheMDNSender"
+            # The standard:
+            #   https://www.ietf.org/rfc/rfc2298.txt
+            # says it should be:
+            #   original-recipient-field = "Original-Recipient" ":" address-type ";" generic-address
+            # e.g.
+            #  "Original-Recipient: rfc822; TheMDNSender"
+            #
+            # However .. MDNs not conforming to the standard require this workaround
+            message_recipient = mdn.get("Original-Recipient").split(";")[0].strip()
+        else:
+            message_recipient = mdn.get("Original-Recipient").split(";")[1].strip()
+        return message_recipient

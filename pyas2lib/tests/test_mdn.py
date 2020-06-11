@@ -76,6 +76,17 @@ class TestMDN(Pyas2TestCase):
         )
         self.assertEqual(status, "processed")
 
+    def test_get_message_recipient(self):
+        """ Test obtaining the original recipient from an MDN """
+        message = as2.email_message.Message()
+        message.add_header("Original-Recipient", "rfc822; someClient")
+        self.assertEqual(as2.Mdn._get_message_recipient(message), "someClient")
+        message = as2.email_message.Message()
+        message.add_header("Original-Recipient", "someClientWithoutAddressType")
+        self.assertEqual(
+            as2.Mdn._get_message_recipient(message), "someClientWithoutAddressType"
+        )
+
     def test_failed_mdn_parse(self):
         """Test mdn parsing failures are captured."""
         # Build an As2 message to be transmitted to partner
